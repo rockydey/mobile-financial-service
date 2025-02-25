@@ -57,7 +57,56 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
+const allAgents = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: You do not have the necessary permissions');
+    }
+
+    const agents = await UserService.getAllAgentsFromDB();
+
+    res.status(200).json({
+      success: true,
+      message: 'Agents fetched successfully',
+      data: agents,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
+const approveAgent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: You do not have the necessary permissions');
+    }
+
+    const agentId = req.params.agentId;
+    const updatedAgent = await UserService.updateAgentIntoDB(agentId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Agent approved successfully',
+      data: updatedAgent,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
 export const UserController = {
   register,
   login,
+  allAgents,
+  approveAgent,
 };

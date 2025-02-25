@@ -59,7 +59,35 @@ const loginUserIntoDB = async (userData: TLoginUser) => {
   return { user, token };
 };
 
+const getAllAgentsFromDB = async () => {
+  const agents = await User.find({ role: 'agent' }).select(
+    'name email number isVerified _id',
+  );
+  return agents;
+};
+
+const updateAgentIntoDB = async (agentId: string) => {
+  try {
+    const updatedAgent = await User.findByIdAndUpdate(
+      agentId,
+      { isVerified: true },
+      { new: true },
+    );
+
+    if (!updatedAgent) {
+      throw new Error('Agent not found');
+    }
+
+    return updatedAgent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    throw new Error(error.message || 'Error approving agent');
+  }
+};
+
 export const UserService = {
   registerUserIntoDB,
   loginUserIntoDB,
+  getAllAgentsFromDB,
+  updateAgentIntoDB,
 };
