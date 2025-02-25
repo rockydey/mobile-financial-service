@@ -32,22 +32,27 @@ const userSchema = new Schema<TUser, UserModel>({
     type: Number,
     required: true,
   },
+  isVerified: {
+    type: Boolean,
+    required: false,
+  },
 });
 
 userSchema.pre('save', async function (next) {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const user = this;
 
-  user.balance =
-    user.role === 'user' ? 40 : user.role === 'agent' ? 100000 : 10000000;
+  user.balance = user.role === 'user' ? 40 : 0;
+
+  user.isVerified = user.role === 'agent' ? false : true;
 
   user.pin = await bcrypt.hash(user.pin, Number(config.bcrypt_salt_rounds));
 
   next();
 });
 
-userSchema.statics.isUserExits = async function (_id: string) {
-  const existingUser = await User.findOne({ _id });
+userSchema.statics.isUserExits = async function (email: string) {
+  const existingUser = await User.findOne({ email });
   return existingUser;
 };
 

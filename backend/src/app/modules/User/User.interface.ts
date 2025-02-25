@@ -8,8 +8,9 @@ export type TUser = {
   email: string;
   role: string;
   nid: number;
+  isVerified?: boolean;
 };
 
 export interface UserModel extends Model<TUser> {
-  isUserExits(_id: string): Promise<TUser | null>;
+  isUserExits(email: string): Promise<TUser | null>;
 }
