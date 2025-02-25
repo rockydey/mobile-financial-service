@@ -1,5 +1,11 @@
 import { Model } from 'mongoose';
 
+export type TLoginUser = {
+  email?: string;
+  number?: number;
+  pin: string;
+};
+
 export type TUser = {
   name: string;
   pin: string;
