@@ -24,11 +24,7 @@ This project is a **Mobile Financial Service** platform built using **React, Typ
 ## 🔑 Admin Credentials
 - **Email:** admin@website.com
 - **Password:** 94376
-- User authentication & authorization
-- Secure financial transactions
-- Account management
-- Transaction history
-- Responsive UI
+
 
 ## 📦 Installation & Setup
 ### 1️⃣ Clone the Repository
