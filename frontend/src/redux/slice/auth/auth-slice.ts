@@ -27,7 +27,6 @@ const initialState = {
   user: "",
   isLoggedIn: false,
   token: "",
-
   pageTitle: "",
 };
 
@@ -41,10 +40,10 @@ export const authSlice = createSlice({
       state.token = action.payload.token;
 
       // set token to the storage
-      localStorage?.setItem("hr-auth-token", action.payload.token);
+      localStorage?.setItem("financial-auth-token", action.payload.token);
     },
     logout: (state) => {
-      localStorage.removeItem("hr-auth-token");
+      localStorage.removeItem("financial-auth-token");
       state.user = "";
       state.isLoggedIn = false;
       state.token = "";

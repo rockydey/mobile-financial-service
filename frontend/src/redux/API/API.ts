@@ -4,7 +4,7 @@ import apiTags from "./tags";
 export const API = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3000",
+    baseUrl: import.meta.env.VITE_API_URL as string,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("financial-auth-token");
       if (token) {

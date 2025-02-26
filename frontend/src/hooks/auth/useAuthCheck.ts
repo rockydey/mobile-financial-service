@@ -1,71 +1,40 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useLazyGetMeQuery } from "../../redux/slice/auth/authSlice";
 import { loginState, logout } from "../../redux/slice/auth/auth-slice";
+
+/**
+ * @description Custom hook to check if authentication is done
+ * @returns {} isLoggedIn
+ */
 
 export interface AuthProps {
   isChecked: boolean;
 }
 
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  number: number;
-  pin: number;
-  role: string;
-  nid: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 function useAuthCheck(): AuthProps {
+  // * action dispatcher
   const dispatch = useDispatch();
-  const [isChecked, setIsChecked] = useState(true);
+  const [getMe, { isLoading }] = useLazyGetMeQuery();
 
-  // Mocking the getMe API call
-  const getMe = async (): Promise<{ data: User }> => {
-    return new Promise<any>((resolve, reject) => {
-      setTimeout(() => {
-        const demoResponse = {
-          user: {
-            _id: "123456",
-            name: "John Doe",
-            email: "john.doe@example.com",
-            number: 1234567890,
-            pin: 1234,
-            role: "admin",
-            nid: "NID123456789",
-            createdAt: "2025-02-24T00:00:00Z",
-            updatedAt: "2025-02-24T00:00:00Z",
-          },
-          isLoggedIn: false,
-          token: "--",
-          pageTitle: "",
-        };
+  // * get user id from cookie
+  const authToken = localStorage.getItem("financial-auth-token");
 
-        const isSuccess = true;
+  //* token do not exits
+  if (!authToken) {
+    dispatch(logout());
+  }
 
-        if (isSuccess) {
-          resolve({ data: demoResponse });
-        } else {
-          reject("Failed to fetch user data");
-        }
-      }, 1000);
-    });
-  };
+  // * authentication check status
+  const [isChecked, setIsChecked] = useState(false);
 
+  // * check authentication status
   useEffect(() => {
-    const authToken = localStorage.getItem("financial-auth-token");
-
-    if (!authToken) {
-      dispatch(logout());
-      setIsChecked(false);
-      return;
-    }
-
-    getMe()
-      .then((res: any) => {
+    setIsChecked(true);
+    getMe(null)
+      .unwrap()
+      .then((res) => {
+        setIsChecked(false);
         dispatch(
           loginState({
             user: res?.data,
@@ -73,14 +42,15 @@ function useAuthCheck(): AuthProps {
           })
         );
       })
-      .catch(() => {
-        dispatch(logout());
-      })
-      .finally(() => {
+      .catch((err) => {
+        console.log(err);
+        localStorage.removeItem("financial-auth-token");
         setIsChecked(false);
       });
-  }, [dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
+  // * return the authentication check status
   return { isChecked };
 }
 

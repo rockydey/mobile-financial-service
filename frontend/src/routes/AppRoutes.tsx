@@ -1,6 +1,21 @@
 import PrivateGuard from "../guard/PrivateGuard";
 import AppLayout from "../layout/AppLayout";
-import { URLHome } from "../utils/urls";
+import Agents from "../pages/agents/Agents";
+import ApproveAgent from "../pages/approve-agent/ApproveAgent";
+import CaseIn from "../pages/case-in/CaseIn";
+import CaseOut from "../pages/case-out/CaseOut";
+import Home from "../pages/home/Home";
+import SendMoney from "../pages/send-money/SendMoney";
+import Users from "../pages/users/Users";
+import {
+  URLAgents,
+  URLApproveAgent,
+  URLCashIn,
+  URLCashOut,
+  URLHome,
+  URLSendMoney,
+  URLUsers,
+} from "../utils/urls";
 
 export const AppRoutes = [
   {
@@ -13,7 +28,31 @@ export const AppRoutes = [
         children: [
           {
             path: URLHome(),
-            element: <div>Home</div>,
+            element: <Home />,
+          },
+          {
+            path: URLCashIn(),
+            element: <CaseIn />,
+          },
+          {
+            path: URLSendMoney(),
+            element: <SendMoney />,
+          },
+          {
+            path: URLCashOut(),
+            element: <CaseOut />,
+          },
+          {
+            path: URLApproveAgent(),
+            element: <ApproveAgent />,
+          },
+          {
+            path: URLAgents(),
+            element: <Agents />,
+          },
+          {
+            path: URLUsers(),
+            element: <Users />,
           },
         ],
       },

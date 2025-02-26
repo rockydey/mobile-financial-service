@@ -9,6 +9,7 @@ const apiTags = [
   "Notification",
   "Settings",
   "Dashboard",
+  "Admin",
 ];
 
 export default [...apiTags];

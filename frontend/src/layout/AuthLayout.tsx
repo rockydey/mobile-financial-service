@@ -1,15 +1,21 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 function AuthLayout() {
+  const { pathname } = useLocation();
+
   return (
-    <div className="relative">
+    <div className="">
       {/* Design */}
       <div>
         <div className="h-[50vh] w-full bg-primary"></div>
       </div>
 
       {/* Content */}
-      <div className="absolute top-[10%] left-[20%] -translate-x-[12%] lg:top-[40%] lg:left-[25%] lg:-translate-x-[15%] xl:top-1/2 xl:left-1/2 transform xl:-translate-x-1/2">
+      <div
+        className={`pb-10 md:pb-0 px-5 lg:px-0 max-w-4xl mx-auto ${
+          pathname === "/register" ? "mt-[-360px]" : "mt-[-240px]"
+        }`}
+      >
         <Outlet />
       </div>
     </div>

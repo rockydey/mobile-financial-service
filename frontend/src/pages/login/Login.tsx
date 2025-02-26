@@ -1,7 +1,79 @@
 import { Link } from "react-router-dom";
 import loginImg from "../../assets/images/loginImg.jpg";
+import { useState } from "react";
+import { useLoginMutation } from "../../redux/slice/auth/authSlice";
+import toast from "react-hot-toast";
+import { useAppDispatch } from "../../redux/store/store";
+import { loginState } from "../../redux/slice/auth/auth-slice";
+
+interface FormData {
+  loginInput: string;
+  pin: number | undefined;
+}
 
 function Login() {
+  const [formData, setFormData] = useState<FormData>({
+    loginInput: "",
+    pin: undefined,
+  });
+  const dispatch = useAppDispatch();
+
+  // api call
+  const [login, { isLoading }] = useLoginMutation();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    const newValue = type === "number" ? Number(value) : value;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Email regex
+    const numberPattern = /^\d+$/; // Number regex
+
+    if (!formData.pin) {
+      alert("Pin is required");
+      return;
+    }
+
+    let payload;
+
+    if (emailPattern.test(formData.loginInput)) {
+      payload = {
+        email: formData.loginInput,
+        pin: formData.pin.toString(),
+      };
+    } else if (numberPattern.test(formData.loginInput)) {
+      payload = {
+        number: Number(formData.loginInput),
+        pin: formData.pin.toString(),
+      };
+    } else {
+      alert("Enter a valid email or number");
+      return;
+    }
+
+    login(payload)
+      .unwrap()
+      .then((res) => {
+        if (res.success) {
+          dispatch(
+            loginState({
+              user: res.data.user,
+              token: res.data.token,
+            })
+          );
+          toast.success("Login successful");
+        }
+      })
+      .catch((err) => toast.error(err.data.message));
+  };
+
   return (
     <div
       className="bg-white rounded-2xl md:mb-10 lg:mb-0"
@@ -17,17 +89,19 @@ function Login() {
             Login
           </h3>
 
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="number" className="block font-semibold mb-2">
-                Phone:
+              <label htmlFor="loginInput" className="block font-semibold mb-2">
+                Email / Phone:
               </label>
               <input
-                type="number"
-                name="number"
-                id="number"
+                type="text"
+                name="loginInput"
+                id="loginInput"
+                value={formData.loginInput}
+                onChange={handleChange}
                 className="focus:outline-0 border border-primary/40 px-5 py-2.5 w-full rounded-md bg-secondary"
-                placeholder="Enter Phone Number"
+                placeholder="Enter Email / Phone"
                 required
               />
             </div>
@@ -39,6 +113,11 @@ function Login() {
                 type="number"
                 name="pin"
                 id="pin"
+                value={formData.pin}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^\d{0,5}$/.test(val)) handleChange(e);
+                }}
                 className="focus:outline-0 border border-primary/40 px-5 py-2.5 w-full rounded-md bg-secondary"
                 placeholder="Enter Pin Number"
                 required
@@ -47,7 +126,7 @@ function Login() {
             <div>
               <input
                 type="submit"
-                value="Login"
+                value={isLoading ? "Loading..." : "Login"}
                 className="bg-primary w-full py-2.5 font-semibold text-white rounded-md cursor-pointer"
               />
             </div>

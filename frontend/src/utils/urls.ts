@@ -1,3 +1,9 @@
 export const URLHome = () => "/home";
 export const URLLogin = () => "/";
 export const URLRegister = () => "/register";
+export const URLAgents = () => "/agents";
+export const URLUsers = () => "/users";
+export const URLCashIn = () => "/cash-in";
+export const URLCashOut = () => "/cash-out";
+export const URLSendMoney = () => "/send-money";
+export const URLApproveAgent = () => "/approve-agent";
