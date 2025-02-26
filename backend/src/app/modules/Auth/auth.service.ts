@@ -416,7 +416,7 @@ const cashInIntoDB = async (
           transactionId: transactionId,
           transactionAmount: amount,
           chargeAmount: 0, // No charge for cash in
-          agentNumber: receiver.number,
+          agentNumber: user.number,
         },
       },
     },
@@ -432,7 +432,7 @@ const cashInIntoDB = async (
           transactionId: transactionId,
           transactionAmount: amount,
           chargeAmount: 0, // No charge for receiver in cash-in
-          agentNumber: receiver.number,
+          agentNumber: user.number,
         },
       },
     },
@@ -448,7 +448,7 @@ const cashInIntoDB = async (
           transactionId: transactionId,
           transactionAmount: amount,
           chargeAmount: 0, // No charge for admin in cash-in
-          agentNumber: receiver.number,
+          agentNumber: user.number,
         },
       },
     },
