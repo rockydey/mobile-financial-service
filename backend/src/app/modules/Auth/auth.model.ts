@@ -36,6 +36,10 @@ const userSchema = new Schema<TUser, UserModel>({
     type: Boolean,
     required: false,
   },
+  isBlocked: {
+    type: Boolean,
+    required: false,
+  },
 });
 
 userSchema.pre('save', async function (next) {
@@ -44,6 +48,8 @@ userSchema.pre('save', async function (next) {
 
   user.balance = user.role === 'user' ? 40 : 0;
 
+  user.isBlocked = false;
+
   user.isVerified = user.role === 'agent' ? false : true;
 
   user.pin = await bcrypt.hash(user.pin, Number(config.bcrypt_salt_rounds));
@@ -51,8 +57,11 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-userSchema.statics.isUserExits = async function (email: string) {
-  const existingUser = await User.findOne({ email });
+userSchema.statics.isUserExits = async function (
+  email: string,
+  number: number,
+) {
+  const existingUser = await User.findOne({ email, number });
   return existingUser;
 };
 

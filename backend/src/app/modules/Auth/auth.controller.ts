@@ -80,14 +80,41 @@ const allAgents = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-const approveAgent = async (req: Request, res: Response): Promise<void> => {
+const allUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'admin') {
       throw new Error('Forbidden: You do not have the necessary permissions');
     }
 
+    const users = await UserService.getAllUsersFromDB();
+
+    res.status(200).json({
+      success: true,
+      message: 'Agents fetched successfully',
+      data: users,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
+const approveAgent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: You do not have the necessary permissions');
+    }
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
     const agentId = req.params.agentId;
-    const updatedAgent = await UserService.updateAgentIntoDB(agentId);
+    const updatedAgent = await UserService.updateAgentIntoDB(agentId, token);
 
     res.status(200).json({
       success: true,
@@ -104,9 +131,117 @@ const approveAgent = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+const verifyAgent = async (req: Request, res: Response) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: You do not have the necessary permissions');
+    }
+
+    const agents = await UserService.getAllUnverifiedUsersFromDB();
+
+    res.status(200).json({
+      success: true,
+      message: 'Agents fetched successfully',
+      data: agents,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
+const getLoginUser = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const user = await UserService.getLoginUserFromDB(token);
+
+    res.status(200).json({
+      success: true,
+      message: 'User fetched successfully',
+      data: user,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error',
+      data: null,
+    });
+  }
+};
+
+const blockUser = async (req: Request, res: Response) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: You do not have the necessary permissions');
+    }
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const userId = req.params.userId;
+    const updatedAgent = await UserService.updateUserBlockIntoDB(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Agent blocked successfully',
+      data: updatedAgent,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
+const deleteUser = async (req: Request, res: Response) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: You do not have the necessary permissions');
+    }
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const userId = req.params.userId;
+    const deleteUser = await UserService.deleteUserFromDB(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully',
+      data: deleteUser,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
 export const UserController = {
   register,
   login,
   allAgents,
   approveAgent,
+  getLoginUser,
+  verifyAgent,
+  allUsers,
+  blockUser,
+  deleteUser,
 };

@@ -15,6 +15,7 @@ export type TUser = {
   role: string;
   nid: number;
   isVerified?: boolean;
+  isBlocked?: boolean;
 };
 
 export interface UserModel extends Model<TUser> {

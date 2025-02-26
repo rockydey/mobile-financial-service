@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import config from '../../config';
 import { TLoginUser, TUser } from './auth.interface';
 import { User } from './auth.model';
@@ -50,6 +51,11 @@ const loginUserIntoDB = async (userData: TLoginUser) => {
   if (user.isVerified === false) {
     throw new Error('Please wait for admin approval');
   }
+
+  if (user.isBlocked) {
+    throw new Error('You have been blocked by admin');
+  }
+
   const isPinValid = await bcrypt.compare(pin, user.pin);
   if (!isPinValid) {
     throw new Error('Invalid login credentials');
@@ -60,17 +66,34 @@ const loginUserIntoDB = async (userData: TLoginUser) => {
 };
 
 const getAllAgentsFromDB = async () => {
-  const agents = await User.find({ role: 'agent' }).select(
-    'name email number isVerified _id',
+  const agents = await User.find({ role: 'agent', isVerified: true }).select(
+    '-pin',
   );
   return agents;
 };
 
-const updateAgentIntoDB = async (agentId: string) => {
+const getAllUsersFromDB = async () => {
+  const agents = await User.find({ role: 'user' }).select('-pin');
+  return agents;
+};
+
+const updateAgentIntoDB = async (agentId: string, token: string) => {
   try {
+    const decoded = jwt.verify(token, config.jwt_secret as string) as {
+      userId: string;
+      email: string;
+      role: string;
+    };
+
     const updatedAgent = await User.findByIdAndUpdate(
       agentId,
-      { isVerified: true },
+      { isVerified: true, balance: 1000000 },
+      { new: true },
+    );
+
+    await User.findByIdAndUpdate(
+      decoded.userId,
+      { $inc: { balance: -1000000 } },
       { new: true },
     );
 
@@ -85,9 +108,70 @@ const updateAgentIntoDB = async (agentId: string) => {
   }
 };
 
+const updateUserBlockIntoDB = async (userId: string) => {
+  const updatedAgent = await User.findByIdAndUpdate(
+    userId,
+    { isBlocked: true },
+    { new: true },
+  );
+  if (!updatedAgent) {
+    throw new Error('Agent not found');
+  }
+  return updatedAgent;
+};
+
+const deleteUserFromDB = async (userId: string) => {
+  const objectId = new mongoose.Types.ObjectId(userId);
+
+  const deletedUser = await User.deleteOne({ _id: objectId });
+
+  if (deletedUser.deletedCount === 0) {
+    throw new Error('Agent not found');
+  }
+
+  return deletedUser;
+};
+
+const getLoginUserFromDB = async (token: string) => {
+  try {
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const decoded = jwt.verify(token, config.jwt_secret as string) as {
+      userId: string;
+      email: string;
+      role: string;
+    };
+
+    const user = await User.findById(decoded.userId).select('-pin');
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    throw new Error(error.message || 'Invalid or expired token');
+  }
+};
+
+const getAllUnverifiedUsersFromDB = async () => {
+  const agents = await User.find({ role: 'agent', isVerified: false }).select(
+    'name email number isVerified _id',
+  );
+  return agents;
+};
+
 export const UserService = {
   registerUserIntoDB,
   loginUserIntoDB,
   getAllAgentsFromDB,
   updateAgentIntoDB,
+  getLoginUserFromDB,
+  getAllUnverifiedUsersFromDB,
+  getAllUsersFromDB,
+  updateUserBlockIntoDB,
+  deleteUserFromDB,
 };
