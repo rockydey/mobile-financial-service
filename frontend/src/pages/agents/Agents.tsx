@@ -51,6 +51,7 @@ function Agents() {
                 <th className="p-3 text-left">Name</th>
                 <th className="p-3 text-left">Email</th>
                 <th className="p-3 text-left">Number</th>
+                <th className="p-3 text-left">Balance</th>
                 <th className="p-3 text-center">Verified</th>
                 <th className="p-3 text-center">Actions</th>
               </tr>
@@ -65,6 +66,7 @@ function Agents() {
                     <td className="p-3">{agent?.name}</td>
                     <td className="p-3">{agent?.email}</td>
                     <td className="p-3">{agent?.number}</td>
+                    <td className="p-3">${agent?.balance}</td>
                     <td className="p-3 text-center">
                       <span
                         className={`px-3 py-1 text-xs font-medium rounded-full ${

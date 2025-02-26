@@ -50,6 +50,7 @@ function Users() {
                 <th className="p-3 text-left">Name</th>
                 <th className="p-3 text-left">Email</th>
                 <th className="p-3 text-left">Number</th>
+                <th className="p-3 text-left">Balance</th>
                 <th className="p-3 text-center">Verified</th>
                 <th className="p-3 text-center">Actions</th>
               </tr>
@@ -64,6 +65,7 @@ function Users() {
                     <td className="p-3">{user?.name}</td>
                     <td className="p-3">{user?.email}</td>
                     <td className="p-3">{user?.number}</td>
+                    <td className="p-3">${user?.balance}</td>
                     <td className="p-3 text-center">
                       <span
                         className={`px-3 py-1 text-xs font-medium rounded-full ${
