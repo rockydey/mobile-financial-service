@@ -2,9 +2,11 @@ import { useState } from "react";
 import UserTransition from "./UserTransition";
 import { useGetMeQuery } from "../../redux/slice/auth/authSlice";
 import Loader from "../loader/Loader";
+import useToken from "../../hooks/token/useToken";
 
 function UserHome() {
-  const { data, isLoading, refetch } = useGetMeQuery(null);
+  const token = useToken();
+  const { data, isLoading, refetch } = useGetMeQuery(null, { skip: !token });
   const [isBlurred, setIsBlurred] = useState(true);
 
   const user = data?.data;
@@ -59,11 +61,9 @@ function UserHome() {
         </div>
       </div>
 
-      {(user?.role === "user" || user?.role === "agent") && (
-        <div>
-          <UserTransition />
-        </div>
-      )}
+      <div className="h-[35vh] overflow-y-auto">
+        <UserTransition />
+      </div>
     </div>
   );
 }

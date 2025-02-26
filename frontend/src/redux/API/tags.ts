@@ -10,6 +10,7 @@ const apiTags = [
   "Settings",
   "Dashboard",
   "Admin",
+  "Transaction",
 ];
 
 export default [...apiTags];

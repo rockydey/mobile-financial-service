@@ -1,40 +1,35 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useLazyGetMeQuery } from "../../redux/slice/auth/authSlice";
 import { loginState, logout } from "../../redux/slice/auth/auth-slice";
 
-/**
- * @description Custom hook to check if authentication is done
- * @returns {} isLoggedIn
- */
-
 export interface AuthProps {
   isChecked: boolean;
+  isLoading: boolean;
 }
 
 function useAuthCheck(): AuthProps {
-  // * action dispatcher
   const dispatch = useDispatch();
-  const [getMe, { isLoading }] = useLazyGetMeQuery();
+  const [getMe] = useLazyGetMeQuery();
+  const [isChecked, setIsChecked] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // * get user id from cookie
-  const authToken = localStorage.getItem("financial-auth-token");
-
-  //* token do not exits
-  if (!authToken) {
-    dispatch(logout());
-  }
-
-  // * authentication check status
-  const [isChecked, setIsChecked] = useState(false);
-
-  // * check authentication status
   useEffect(() => {
-    setIsChecked(true);
+    const authToken = localStorage.getItem("financial-auth-token");
+
+    // If no authToken, skip API call and just log out
+    if (!authToken) {
+      dispatch(logout());
+      setIsChecked(false);
+      setIsLoading(false);
+      return;
+    }
+
+    // If token exists, proceed with the getMe API call
     getMe(null)
       .unwrap()
-      .then((res) => {
-        setIsChecked(false);
+      .then((res: any) => {
         dispatch(
           loginState({
             user: res?.data,
@@ -42,16 +37,16 @@ function useAuthCheck(): AuthProps {
           })
         );
       })
-      .catch((err) => {
-        console.log(err);
-        localStorage.removeItem("financial-auth-token");
+      .catch(() => {
+        dispatch(logout());
+      })
+      .finally(() => {
         setIsChecked(false);
+        setIsLoading(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]);
+  }, [dispatch, getMe]);
 
-  // * return the authentication check status
-  return { isChecked };
+  return { isChecked, isLoading };
 }
 
 export default useAuthCheck;

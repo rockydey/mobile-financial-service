@@ -1,4 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
+import useUser from "../../hooks/auth/useUser";
+import { useCashOutMutation } from "../../redux/slice/transaction/transactionSlice";
+import toast from "react-hot-toast";
 
 interface FormData {
   number: number | undefined;
@@ -10,6 +14,9 @@ function UserCaseOut() {
     number: undefined,
     amount: undefined,
   });
+  const user: any = useUser();
+
+  const [cashOut, { isLoading }] = useCashOutMutation();
 
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,6 +30,30 @@ function UserCaseOut() {
   // Handle form submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.amount && formData.amount < 100) {
+      toast.error("Minimum send amount is 100");
+      return;
+    }
+
+    const payload = {
+      userId: user._id,
+      receiverNumber: formData.number,
+      amount: formData.amount,
+    };
+
+    cashOut(payload)
+      .unwrap()
+      .then(() => {
+        toast.success("Money sent successfully");
+        setFormData({
+          number: undefined,
+          amount: undefined,
+        });
+      })
+      .catch((error) => {
+        toast.error(error.data.message);
+      });
   };
 
   return (
@@ -44,7 +75,10 @@ function UserCaseOut() {
               type="number"
               id="number"
               value={formData.number ?? ""}
-              onChange={handleChange}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/^\d{0,11}$/.test(val)) handleChange(e);
+              }}
               placeholder="Enter recipient's number"
               className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
               required
@@ -75,7 +109,7 @@ function UserCaseOut() {
             type="submit"
             className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all duration-300 cursor-pointer"
           >
-            Cash Out
+            {isLoading ? "Cashing Out..." : "Cash Out"}
           </button>
         </form>
       </div>

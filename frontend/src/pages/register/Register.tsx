@@ -3,8 +3,6 @@ import registerImg from "../../assets/images/registerImage.jpg";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRegisterMutation } from "../../redux/slice/auth/authSlice";
-import { useAppDispatch } from "../../redux/store/store";
-import { loginState } from "../../redux/slice/auth/auth-slice";
 
 interface FormData {
   name: string;
@@ -24,7 +22,6 @@ function Register() {
     nid: undefined,
     role: "user",
   });
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   // Calling API
@@ -62,9 +59,9 @@ function Register() {
     register(payload)
       .unwrap()
       .then((res) => {
-        if (res.data.success && res.data.user.isVerified) {
-          toast.success(res.data.message);
-          dispatch(loginState({ user: res.data.user, token: res.data.token }));
+        if (res.data.user.isVerified) {
+          toast.success(res.message);
+          navigate("/");
         }
         if (!res.data.user.isVerified) {
           toast.success("Please wait for admin approval!");

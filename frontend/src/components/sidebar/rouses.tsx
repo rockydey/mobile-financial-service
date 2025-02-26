@@ -55,7 +55,7 @@ const SidebarRoutes = [
     title: "Cash Out",
     icon: <HiCash />,
     link: URLCashOut(),
-    permission: [UserRole.USER, UserRole.AGENT],
+    permission: [UserRole.USER],
   },
 ];
 

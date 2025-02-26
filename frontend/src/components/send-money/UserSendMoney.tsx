@@ -1,4 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
+import toast from "react-hot-toast";
+import useUser from "../../hooks/auth/useUser";
+import { useSendMoneyMutation } from "../../redux/slice/transaction/transactionSlice";
 
 interface FormData {
   number: number | undefined;
@@ -12,6 +16,9 @@ function UserSendMoney() {
     amount: undefined,
     reference: "",
   });
+  const user: any = useUser();
+
+  const [sendMoney, { isLoading }] = useSendMoneyMutation();
 
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,6 +32,32 @@ function UserSendMoney() {
   // Handle form submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.amount && formData.amount < 50) {
+      toast.error("Minimum send amount is 50");
+      return;
+    }
+
+    const payload = {
+      userId: user._id,
+      receiverNumber: formData.number,
+      amount: formData.amount,
+      reference: formData.reference,
+    };
+
+    sendMoney(payload)
+      .unwrap()
+      .then(() => {
+        toast.success("Money sent successfully");
+        setFormData({
+          number: undefined,
+          amount: undefined,
+          reference: "",
+        });
+      })
+      .catch((error) => {
+        toast.error(error.data.message);
+      });
   };
 
   return (
@@ -46,7 +79,10 @@ function UserSendMoney() {
               type="number"
               id="number"
               value={formData.number ?? ""}
-              onChange={handleChange}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/^\d{0,11}$/.test(val)) handleChange(e);
+              }}
               placeholder="Enter recipient's number"
               className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
               required
@@ -95,7 +131,7 @@ function UserSendMoney() {
             type="submit"
             className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all duration-300 cursor-pointer"
           >
-            Send Money
+            {isLoading ? "Sending..." : "Send Money"}
           </button>
         </form>
       </div>
