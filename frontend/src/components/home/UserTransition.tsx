@@ -25,7 +25,7 @@ function UserTransition() {
             <thead className="bg-gray-100">
               <tr>
                 <th className="border border-gray-300 px-4 py-2 text-left">
-                  Agent Number
+                  Sender Number
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-left">
                   Amount
