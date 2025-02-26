@@ -11,4 +11,16 @@ export const userValidationSchema = z.object({
   nid: z.number().min(100000000, 'NID must be at least 9 digits'),
   isVerified: z.boolean().optional(),
   isBlocked: z.boolean().optional(),
+  transactions: z
+    .array(
+      z.object({
+        transactionId: z.string(),
+        transactionAmount: z.number(),
+        chargeAmount: z.number().optional(),
+        agentNumber: z.number(),
+        reference: z.string().optional(),
+        transactionType: z.string().optional(),
+      }),
+    )
+    .optional(),
 });

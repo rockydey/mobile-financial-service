@@ -234,6 +234,109 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+const sendMoney = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const { userId, amount, receiverNumber, reference } = req.body;
+
+    if (!userId || !receiverNumber || !amount || amount <= 0) {
+      throw new Error('Invalid parameters');
+    }
+
+    const result = await UserService.sendMoneyIntoDB(
+      userId,
+      receiverNumber,
+      amount,
+      reference,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Send Money successfully',
+      data: result,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
+const cashOut = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const { userId, amount, receiverNumber } = req.body;
+
+    if (!userId || !receiverNumber || !amount || amount <= 0) {
+      throw new Error('Invalid parameters');
+    }
+
+    const result = await UserService.cashOutIntoDB(
+      userId,
+      receiverNumber,
+      amount,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Send Money successfully',
+      data: result,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
+const cashIn = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error('Token is required');
+    }
+
+    const { userId, amount, receiverNumber } = req.body;
+
+    if (!userId || !receiverNumber || !amount || amount <= 0) {
+      throw new Error('Invalid parameters');
+    }
+
+    const result = await UserService.cashInIntoDB(
+      userId,
+      receiverNumber,
+      amount,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Send Money successfully',
+      data: result,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
+      data: null,
+    });
+  }
+};
+
 export const UserController = {
   register,
   login,
@@ -244,4 +347,7 @@ export const UserController = {
   allUsers,
   blockUser,
   deleteUser,
+  sendMoney,
+  cashOut,
+  cashIn,
 };

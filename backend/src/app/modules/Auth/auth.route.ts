@@ -32,6 +32,12 @@ router.delete(
   UserController.deleteUser,
 );
 
+router.patch('/send-money', authenticateToken, UserController.sendMoney);
+
+router.patch('/cash-out', authenticateToken, UserController.cashOut);
+
+router.patch('/cash-in', authenticateToken, UserController.cashIn);
+
 router.get('/auth/me', authenticateToken, UserController.getLoginUser);
 
 export const UserRoutes = router;

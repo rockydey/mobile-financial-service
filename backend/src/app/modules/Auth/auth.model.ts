@@ -3,6 +3,15 @@ import { TUser, UserModel } from './auth.interface';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 
+const transactionSchema = new Schema({
+  transactionId: { type: String, required: true },
+  transactionAmount: { type: Number, required: true },
+  chargeAmount: { type: Number, default: 0, required: false },
+  agentNumber: { type: Number, required: true },
+  reference: { type: String, required: false },
+  transactionType: { type: String, required: false },
+});
+
 const userSchema = new Schema<TUser, UserModel>({
   name: {
     type: String,
@@ -40,6 +49,7 @@ const userSchema = new Schema<TUser, UserModel>({
     type: Boolean,
     required: false,
   },
+  transactions: [transactionSchema],
 });
 
 userSchema.pre('save', async function (next) {
@@ -57,11 +67,11 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-userSchema.statics.isUserExits = async function (
-  email: string,
-  number: number,
-) {
-  const existingUser = await User.findOne({ email, number });
+userSchema.statics.isUserExits = async function (number: string) {
+  const value = Number(number);
+  const existingUser = await User.findOne({
+    number: value,
+  });
   return existingUser;
 };
 

@@ -4,6 +4,7 @@ import { TLoginUser, TUser } from './auth.interface';
 import { User } from './auth.model';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 const generateJwtToken = (
   userId: string,
@@ -22,7 +23,7 @@ const generateJwtToken = (
 };
 
 const registerUserIntoDB = async (userData: TUser) => {
-  if (await User.isUserExits(userData.email as string)) {
+  if (await User.isUserExits(userData.number.toString())) {
     throw new Error('User already exists');
   }
   const result = await User.create(userData);
@@ -164,6 +165,316 @@ const getAllUnverifiedUsersFromDB = async () => {
   return agents;
 };
 
+const sendMoneyIntoDB = async (
+  userId: string,
+  receiverNumber: number,
+  amount: number,
+  reference: string,
+) => {
+  const user = await User.findById(userId);
+  const receiver = await User.findOne({
+    number: receiverNumber,
+    isVerified: true,
+  });
+  const admin = await User.findOne({ role: 'admin' });
+
+  if (!user || !receiver || !admin) {
+    throw new Error('User, agent, or admin not found');
+  }
+
+  // Use nullish coalescing to ensure balance is not undefined
+  const userBalance = user.balance ?? 0;
+
+  // Check if user has enough balance
+  if (userBalance < amount) {
+    throw new Error('Insufficient balance');
+  }
+
+  // Initialize charge to 0 and check if amount is >= 100 for the charge
+  let charge = 0;
+  if (amount >= 100) {
+    charge = 5;
+  }
+
+  const transactionId = uuidv4();
+
+  // Update balances for user, receiver, and admin
+  const userUpdate = await User.updateOne(
+    { _id: user._id },
+    {
+      $inc: { balance: -amount - charge }, // Deduct amount and charge from user balance
+      $push: {
+        transactions: {
+          transactionType: 'send money',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: charge,
+          agentNumber: receiver.number,
+          reference,
+        },
+      },
+    },
+  );
+
+  const receiverUpdate = await User.updateOne(
+    { _id: receiver._id },
+    {
+      $inc: { balance: amount }, // Add amount to receiver balance
+      $push: {
+        transactions: {
+          transactionType: 'send money',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: charge,
+          agentNumber: receiver.number,
+          reference,
+        },
+      },
+    },
+  );
+
+  const adminUpdate = await User.updateOne(
+    { _id: admin._id },
+    {
+      $inc: { balance: charge }, // Add charge to admin balance if applicable
+      $push: {
+        transactions: {
+          transactionType: 'send money',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: charge,
+          agentNumber: receiver.number,
+          reference,
+        },
+      },
+    },
+  );
+
+  // Check if all updates were successful
+  if (
+    !userUpdate.modifiedCount ||
+    !receiverUpdate.modifiedCount ||
+    !adminUpdate.modifiedCount
+  ) {
+    throw new Error('Failed to update balances');
+  }
+
+  // Return the transaction details
+  return {
+    transactions: {
+      transactionId: transactionId,
+      transactionAmount: amount,
+      chargeAmount: charge,
+      agentNumber: receiver.number,
+      reference,
+      transactionType: 'send money',
+    },
+  };
+};
+
+const cashOutIntoDB = async (
+  userId: string,
+  receiverNumber: number,
+  amount: number,
+) => {
+  const user = await User.findById(userId);
+  const receiver = await User.findOne({
+    number: receiverNumber,
+    isVerified: true,
+    role: 'agent',
+  });
+  const admin = await User.findOne({ role: 'admin' });
+
+  if (!user || !receiver || !admin) {
+    throw new Error('User, agent, or admin not found');
+  }
+
+  // Use nullish coalescing to ensure balance is not undefined
+  const userBalance = user.balance ?? 0;
+
+  // Check if user has enough balance
+  if (userBalance < amount) {
+    throw new Error('Insufficient balance');
+  }
+
+  // Calculate charges for cashout
+  const userCharge = amount * 0.015; // 1.5% charge on user for cashout
+  const agentCharge = amount * 0.01; // 1% of amount is added to agent's balance
+  const adminCharge = amount * 0.005; // 0.5% of amount is added to admin's balance
+
+  // Generate a unique transaction ID
+  const transactionId = uuidv4();
+
+  // Update balances for user, receiver (agent), and admin
+  const userUpdate = await User.updateOne(
+    { _id: user._id },
+    {
+      $inc: { balance: -(amount + userCharge) }, // Deduct amount + user charge from user balance
+      $push: {
+        transactions: {
+          transactionType: 'cash out',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: userCharge,
+          agentNumber: receiver.number,
+        },
+      },
+    },
+  );
+
+  const receiverUpdate = await User.updateOne(
+    { _id: receiver._id },
+    {
+      $inc: { balance: agentCharge }, // Add agent's charge (1% of amount)
+      $push: {
+        transactions: {
+          transactionType: 'cash out',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: agentCharge,
+          agentNumber: receiver.number,
+        },
+      },
+    },
+  );
+
+  const adminUpdate = await User.updateOne(
+    { _id: admin._id },
+    {
+      $inc: { balance: adminCharge }, // Add admin's charge (0.5% of amount)
+      $push: {
+        transactions: {
+          transactionType: 'cash out',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: adminCharge,
+          agentNumber: receiver.number,
+        },
+      },
+    },
+  );
+
+  // Check if all updates were successful
+  if (
+    !userUpdate.modifiedCount ||
+    !receiverUpdate.modifiedCount ||
+    !adminUpdate.modifiedCount
+  ) {
+    throw new Error('Failed to update balances');
+  }
+
+  // Return the transaction details
+  return {
+    transactions: {
+      transactionId: transactionId,
+      transactionAmount: amount,
+      chargeAmount: userCharge, // User's charge is returned
+      agentChargeAmount: agentCharge, // Agent's charge is returned
+      adminChargeAmount: adminCharge, // Admin's charge is returned
+      agentNumber: receiver.number,
+      transactionType: 'cash out',
+    },
+  };
+};
+
+const cashInIntoDB = async (
+  userId: string,
+  receiverNumber: number,
+  amount: number,
+) => {
+  const user = await User.findById(userId);
+  const receiver = await User.findOne({
+    number: receiverNumber,
+    isVerified: true,
+    role: 'user',
+  });
+  const admin = await User.findOne({ role: 'admin' });
+
+  if (!user || !receiver || !admin) {
+    throw new Error('User, receiver, or admin not found');
+  }
+
+  // Use nullish coalescing to ensure balance is not undefined
+  const userBalance = user.balance ?? 0;
+
+  // Check if user has enough balance (in case you're using this for a deduction system)
+  if (userBalance < amount) {
+    throw new Error('Insufficient balance');
+  }
+
+  // No charges for cash-in transaction
+  const transactionId = uuidv4();
+
+  // Update balances for user, receiver, and admin (without any charges)
+  const userUpdate = await User.updateOne(
+    { _id: user._id },
+    {
+      $inc: { balance: -amount }, // Add amount to user's balance
+      $push: {
+        transactions: {
+          transactionType: 'cash in',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: 0, // No charge for cash in
+          agentNumber: receiver.number,
+        },
+      },
+    },
+  );
+
+  const receiverUpdate = await User.updateOne(
+    { _id: receiver._id },
+    {
+      $inc: { balance: amount }, // No change to receiver's balance for cash-in
+      $push: {
+        transactions: {
+          transactionType: 'cash in',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: 0, // No charge for receiver in cash-in
+          agentNumber: receiver.number,
+        },
+      },
+    },
+  );
+
+  const adminUpdate = await User.updateOne(
+    { _id: admin._id },
+    {
+      $inc: { balance: 0 }, // No charge for admin in cash-in
+      $push: {
+        transactions: {
+          transactionType: 'cash in',
+          transactionId: transactionId,
+          transactionAmount: amount,
+          chargeAmount: 0, // No charge for admin in cash-in
+          agentNumber: receiver.number,
+        },
+      },
+    },
+  );
+
+  // Check if all updates were successful
+  if (
+    !userUpdate.modifiedCount ||
+    !receiverUpdate.modifiedCount ||
+    !adminUpdate.modifiedCount
+  ) {
+    throw new Error('Failed to update balances');
+  }
+
+  // Return the transaction details
+  return {
+    transactions: {
+      transactionId: transactionId,
+      transactionAmount: amount,
+      chargeAmount: 0, // No charge for cash-in
+      agentNumber: receiver.number,
+      transactionType: 'cash in',
+    },
+  };
+};
+
 export const UserService = {
   registerUserIntoDB,
   loginUserIntoDB,
@@ -174,4 +485,7 @@ export const UserService = {
   getAllUsersFromDB,
   updateUserBlockIntoDB,
   deleteUserFromDB,
+  sendMoneyIntoDB,
+  cashOutIntoDB,
+  cashInIntoDB,
 };
